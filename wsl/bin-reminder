@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Plain terminal front-end for the spoken reminders -- same script the
+# /reminder slash command runs, but without going through Claude (no tokens).
+#   reminder            -> list (reminder.py's default)
+#   reminder next 30
+#   reminder add tea --at 15:00 --repeat daily --text Time for tea
+exec_py="$HOME/.claude/scripts/tts/venv/bin/python3"
+script="$HOME/.claude/scripts/tts/reminder.py"
+"$exec_py" "$script" "$@" 2>&1 |
+  grep -viE "futurewarning|weightnorm|super\(\)\.__init__|repo_id|^\s+WeightNorm"
+exit "${PIPESTATUS[0]}"

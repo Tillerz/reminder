@@ -1,0 +1,51 @@
+[
+  {
+    "name": "lunch",
+    "time": "12:30",
+    "text": "It's time for lunch!",
+    "lead": 0,
+    "repeat": { "type": "daily" }
+  },
+  {
+    "name": "standup",
+    "time": "09:30",
+    "text": "Daily standup.",
+    "lead": 5,
+    "repeat": { "type": "weekly", "weekday": "mon" }
+  },
+  {
+    "name": "bin-day",
+    "time": "19:00",
+    "text": "Put the bins out.",
+    "lead": 30,
+    "repeat": { "type": "nth_weekday", "weekday": "thu", "nth": [1, 3, 5] }
+  },
+  {
+    "name": "game-night",
+    "time": "18:00",
+    "text": "Game night.",
+    "lead": 30,
+    "repeat": { "type": "every_n_weeks", "n": 2, "start": "2026-01-06" }
+  },
+  {
+    "name": "rent",
+    "time": "09:00",
+    "text": "Pay the rent today.",
+    "lead": 0,
+    "repeat": { "type": "monthly_day", "day": 1 }
+  },
+  {
+    "name": "dentist",
+    "time": "09:15",
+    "text": "Dentist appointment.",
+    "lead": 30,
+    "repeat": { "type": "once", "date": "2026-10-07" }
+  },
+  {
+    "name": "birthday-example",
+    "time": "08:00",
+    "text": "Today is a birthday.",
+    "lead": 0,
+    "repeat": { "type": "yearly", "month": 12, "day": 10 }
+  }
+]
