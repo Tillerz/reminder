@@ -1,7 +1,7 @@
 # reminder
 
 Spoken daily reminders on Windows, with the same local voice as
-[claude-audio-feedback](../claude-audio-feedback/) (requirement!). Each reminder is a
+[claude-audio-feedback](https://github.com/Tillerz/claude-audio-feedback) (requirement!). Each reminder is a
 pre-rendered WAV played by a Windows Scheduled Task.
 
 **Deliberately independent of WSL and Claude Code.** Nothing needs to be open at
