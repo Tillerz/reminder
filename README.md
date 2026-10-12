@@ -75,12 +75,12 @@ plain one-shot times.
 ### Why the planner runs in the morning
 
 **This PC is switched off overnight.** A nightly planner would never run. The
-planner therefore fires at logon, plus on a repeat during the morning. Each run
-plans 36 hours ahead, so one morning run covers the rest of the day and the next
-morning.
+planner therefore fires at logon, plus **every 5 minutes from 06:00 to 09:00**.
+Each run plans 36 hours ahead, so one morning run covers the rest of the day and
+the next morning.
 
 `state/plan.stamp` holds the plan it last applied. A run whose plan is unchanged
-exits at once, so a frequent repeat costs almost nothing.
+exits at once, so the repeat costs almost nothing.
 
 ## Files
 
@@ -106,6 +106,7 @@ exits at once, so a frequent repeat costs almost nothing.
 | `dispatch.ps1` | `%USERPROFILE%\.claude\reminders\dispatch.ps1` | The planner. All date maths. `-Preview <days>` prints upcoming pings without touching the scheduler. `-Force` rebuilds even if the plan is unchanged. |
 | `install_dispatcher.ps1` | same folder | Run once. Registers `ClaudeReminder_Dispatch` and removes the old v1 per-reminder tasks. |
 | `play.ps1` | same folder | Plays `wav\<Name>.wav`. Now only a fallback and a handy way to test by hand. |
+| `dispatch-hidden.vbs` | same folder | Launched by the planner task. Runs `dispatch.ps1` with no window. `install_dispatcher.ps1` falls back to a plain `powershell.exe` action if this file is missing. |
 | `reminders.example.json` | copy to `reminders.json` in the same folder | Starter list, one entry per repeat rule. |
 | `scheduled-tasks/ClaudeReminder_Dispatch.template.xml` | - | The planner task definition, with your user, PC name and SID replaced by placeholders. Normally you do not need it: `install_dispatcher.ps1` builds the task correctly from scratch. |
 
@@ -114,26 +115,17 @@ exits at once, so a frequent repeat costs almost nothing.
 as files and as audio. `reminder sync` rebuilds all of them from
 `reminders.json` in about two minutes.
 
-## WARNING: the live task differs from the installer
+## Keep the installer and the live task in step
 
-Checked 2026-10-11. Someone edited the planner task by hand in the Windows Task
-Scheduler window after it was installed.
+`install_dispatcher.ps1` holds the schedule: at logon, plus every 5 minutes
+from 06:00 to 09:00. **Re-running it overwrites anything changed by hand in the
+Windows Task Scheduler window.**
 
-| | `install_dispatcher.ps1` says | Live task is |
-|---|---|---|
-| Start | 06:00 | **06:30** |
-| Repeat every | 5 min | **30 min** |
-| For | 3 hours | **2 hours** |
+So change the schedule in `install_dispatcher.ps1` and re-run it, rather than in
+the Task Scheduler UI.
 
-Both work. The hand-made values are recorded in the table above;
-`scheduled-tasks/ClaudeReminder_Dispatch.template.xml` carries the same trigger
-shape with the user, PC name and SID removed.
-
-**Re-running `install_dispatcher.ps1` will overwrite the hand-made change.**
-Decide which one you want and make them match.
-
-This happened once before: on 2026-09-15 the task was found with its repeat
-trigger disabled entirely, which stopped the pruning of finished tasks.
+`schtasks.exe /query /tn "ClaudeReminder_Dispatch" /xml` shows what is really
+registered.
 
 ## Install from scratch
 
@@ -149,7 +141,7 @@ project uses two things from it:
    ```bash
    W="$(wslpath -u "$(cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r')")/.claude/reminders"
    mkdir -p "$W/wav" "$W/state"
-   cp windows/dispatch.ps1 windows/install_dispatcher.ps1 windows/play.ps1 "$W/"
+   cp windows/dispatch.ps1 windows/install_dispatcher.ps1 windows/play.ps1 windows/dispatch-hidden.vbs "$W/"
    cp windows/reminders.example.json "$W/reminders.json"
    ```
    Then edit `$W/reminders.json` and put your own reminders in it.
@@ -251,6 +243,7 @@ A `once` entry is not deleted after it fires. `list` marks it `(past)`.
 | A repeating daily trigger could not be built | `New-ScheduledTaskTrigger` has no repetition parameter for `-Daily` | Borrow the `Repetition` block from a throwaway `-Once` trigger |
 | `/reminder` with no argument errored out | argparse required a subcommand | `reminder.py` defaults to `list` |
 | A console window flashed on every reminder | Task Scheduler launching `powershell.exe` gets a console before `-WindowStyle Hidden` can hide it | The run tasks call `wscript.exe` with `play-hidden.vbs`, which is GUI-subsystem and never gets a console |
+| A console window still flashed up to 5 times each morning | Same cause, but the **planner** task was missed when the run tasks were fixed | The planner task calls `wscript.exe` with `dispatch-hidden.vbs` |
 
 ## Testing
 
@@ -284,7 +277,7 @@ cp $T/reminder.py $T/reminder_hook.py $R/wsl/
 cp ~/bin/reminder $R/wsl/bin-reminder
 cp ~/.claude/commands/reminder.md $R/claude-code/
 jq '{hooks: {UserPromptExpansion: .hooks.UserPromptExpansion}}' ~/.claude/settings.json > $R/claude-code/settings.hook.json
-cp "$W/dispatch.ps1" "$W/install_dispatcher.ps1" "$W/play.ps1" $R/windows/
+cp "$W/dispatch.ps1" "$W/install_dispatcher.ps1" "$W/play.ps1" "$W/dispatch-hidden.vbs" $R/windows/
 ```
 
 **Code only, on purpose.** `reminders.json`, `wav/` and `state/` are your own

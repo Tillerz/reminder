@@ -15,8 +15,17 @@ $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 $taskName = "ClaudeReminder_Dispatch"
 
-$action = New-ScheduledTaskAction -Execute "powershell.exe" `
-    -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$root\dispatch.ps1`""
+# Launch through wscript.exe when possible: Task Scheduler starting
+# powershell.exe directly gets a console window, which flashes on screen at
+# every morning check even with -WindowStyle Hidden.
+$hidden = Join-Path $root "dispatch-hidden.vbs"
+if (Test-Path $hidden) {
+    $action = New-ScheduledTaskAction -Execute "wscript.exe" `
+        -Argument "//nologo //B `"$hidden`""
+} else {
+    $action = New-ScheduledTaskAction -Execute "powershell.exe" `
+        -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$root\dispatch.ps1`""
+}
 
 # -User matters: an AtLogOn trigger without it means "any user", which
 # Task Scheduler only lets an elevated process register.
